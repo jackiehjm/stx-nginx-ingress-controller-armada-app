@@ -5,6 +5,7 @@ export ROOT = debian/tmp
 export APP_FOLDER = $(ROOT)/usr/local/share/applications/helm
 
 export DEB_VERSION = $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
+export DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH 2>/dev/null)
 export RELEASE = $(shell cat /etc/build.info | grep SW_VERSION | cut -d'"' -f2)
 export REVISION = $(shell echo $(DEB_VERSION) | cut -f 4 -d '.')
 
@@ -28,6 +29,10 @@ override_dh_auto_build:
 	tar xvfz ../$(FLUXCD_NGINX_PKG) ; \
 	rm helm-charts/Makefile ; \
 	mv -f helm-charts/* .
+
+	sed -i 's/amd64/$(DEB_HOST_ARCH)/g' \
+		fluxcd/charts/ingress-nginx/values.yaml \
+		fluxcd/charts/ingress-nginx/README.md
 
 	# Apply the daemonset tolerations patch to fluxcd
 	cd fluxcd ; patch --no-backup-if-mismatch --fuzz=0 -p1 < ../files/0001-add-toleration-fluxcd.patch ; \
@@ -61,6 +66,8 @@ override_dh_auto_build:
 	cp /plugins/*.whl $(STAGING_FLUXCD)/plugins
 
 	cp -R fluxcd-manifests $(STAGING_FLUXCD)/
+	sed -i 's/@ARCH@/$(DEB_HOST_ARCH)/g' \
+		$(STAGING_FLUXCD)/fluxcd-manifests/ingress-nginx/ingress-nginx-static-overrides.yaml
 
 	# calculate checksum of all files in app_staging
 	cd $(STAGING_FLUXCD) && find . -type f ! -name '*.md5' -print0 | xargs -0 md5sum > checksum.md5
