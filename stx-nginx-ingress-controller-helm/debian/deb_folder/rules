@@ -5,6 +5,7 @@ export ROOT = debian/tmp
 export APP_FOLDER = $(ROOT)/usr/local/share/applications/helm
 
 export DEB_VERSION = $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
+export DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH 2>/dev/null)
 export RELEASE = $(shell cat /etc/build.info | grep SW_VERSION | cut -d'"' -f2)
 export REVISION = $(shell echo $(DEB_VERSION) | cut -f 4 -d '.')
 
@@ -23,6 +24,10 @@ override_dh_auto_build:
 	mkdir -p $(STAGING)
 	cp files/metadata.yaml $(STAGING)
 	cp -Rv fluxcd-manifests $(STAGING)
+
+	sed -i 's/@ARCH@/$(DEB_HOST_ARCH)/g' \
+		$(STAGING)/fluxcd-manifests/ingress-nginx/ingress-nginx-static-overrides.yaml
+
 	mkdir -p $(STAGING)/charts
 	cp /usr/lib/helm/*.tgz $(STAGING)/charts
 
