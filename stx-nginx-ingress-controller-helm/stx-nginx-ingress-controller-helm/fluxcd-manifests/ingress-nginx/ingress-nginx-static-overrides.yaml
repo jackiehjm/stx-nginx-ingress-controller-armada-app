@@ -78,7 +78,7 @@ controller:
 defaultBackend:
   image:
     digest: ""
-    repository: registry.k8s.io/defaultbackend-amd64
+    repository: registry.k8s.io/defaultbackend-@ARCH@
     tag: "1.5"
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
